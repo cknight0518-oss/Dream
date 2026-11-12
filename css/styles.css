@@ -119,3 +119,8 @@ dd { margin: 0; }
   .card-text span { display: none; }
   input[type=number] { width: 130px; }
 }
+
+.viewer-host { position: relative; }
+.viewer-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.viewer-label { position: absolute; left: 0; top: 0; background: rgba(255,255,255,.9); color: #222; padding: 2px 8px; border-radius: 8px; font: 600 13px system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.viewer-label.small { font-size: 11px; }

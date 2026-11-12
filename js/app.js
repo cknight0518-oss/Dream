@@ -261,9 +261,7 @@ function renderResults() {
 
   const host = $('#viewer');
   if (!viewer) viewer = new HouseViewer(host);
-  else host.appendChild(viewer.renderer.domElement);
-  viewer.container = host;
-  viewer.resize();
+  else viewer.attach(host);
   viewer.build(p);
   renderViewTabs();
 

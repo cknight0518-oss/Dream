@@ -7,6 +7,7 @@ const loader = new THREE.TextureLoader();
 const texCache = new Map();
 const matCache = new Map();
 let maxAniso = 8;
+let envIntensity = 1;
 export function setMaxAnisotropy(n) { maxAniso = n; }
 
 function tex(name, srgb) {
@@ -51,7 +52,7 @@ export function surface(kind, color = '#ffffff', extra = {}) {
   const k = KINDS[kind];
   const m = new THREE.MeshStandardMaterial({
     color: NATURAL.has(kind) && color === '#ffffff' ? '#ffffff' : color,
-    roughness: k.roughness, metalness: k.metalness || 0, ...extra,
+    roughness: k.roughness, metalness: k.metalness || 0, envMapIntensity: envIntensity, ...extra,
   });
   if (k.map) {
     m.map = tex(k.map, true);
@@ -64,8 +65,28 @@ export function surface(kind, color = '#ffffff', extra = {}) {
   return m;
 }
 
-export const GLASS = new THREE.MeshStandardMaterial({ color: '#2f3d47', roughness: 0.06, metalness: 0.75 });
+// Double-sided copy of a material, cached so lighting changes reach it too.
+const dsCache = new Map();
+export function twoSided(m) {
+  if (!dsCache.has(m)) {
+    const c = m.clone(); c.side = THREE.DoubleSide;
+    dsCache.set(m, c); matCache.set('twoSided:' + m.uuid, c);
+  }
+  return dsCache.get(m);
+}
+
+// Window glass glows warm at dusk (see setLighting in house3d.js).
+export const GLASS = new THREE.MeshStandardMaterial({ color: '#2f3d47', roughness: 0.06, metalness: 0.75, emissive: '#ffcf8a', emissiveIntensity: 0 });
 export const WATER = new THREE.MeshStandardMaterial({ color: '#2a8bbf', roughness: 0.04, metalness: 0.2 });
+// Lamps, street lights and other light sources: brighten at dusk.
+export const BULB = new THREE.MeshStandardMaterial({ color: '#fff2d8', emissive: '#ffd89a', emissiveIntensity: 0.2, roughness: 0.4 });
+
+// Scale reflections from the sky for every material (dimmer at dusk).
+export function setEnvIntensity(v) {
+  envIntensity = v;
+  for (const m of matCache.values()) m.envMapIntensity = v;
+  GLASS.envMapIntensity = WATER.envMapIntensity = v;
+}
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
 const _n = new THREE.Vector3(), _u = new THREE.Vector3(), _v = new THREE.Vector3();
