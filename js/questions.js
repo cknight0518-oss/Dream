@@ -4,14 +4,14 @@ import { EXTERIOR_STYLES, INTERIOR_STYLES, EXTERIOR_PALETTES, CABINET_COLORS } f
 import { exteriorSVG, interiorSVG, paletteSVG, cabinetSVG } from './illustrations.js';
 
 const exteriorCards = Object.entries(EXTERIOR_STYLES).map(([value, s]) => ({
-  value, label: s.label, desc: s.desc, visual: () => exteriorSVG(value),
+  value, label: s.label, desc: s.desc, photo: `ext_${value}`, visual: () => exteriorSVG(value),
 }));
 
 const interiorCards = (withInherit) => [
   ...(withInherit ? [{ value: 'inherit', label: 'Same as the rest of the house', desc: 'Use the overall interior style.',
-    visual: (p) => interiorSVG(p.interiorStyle || 'modern') }] : []),
+    photo: (p) => `int_${p.interiorStyle || 'modern'}`, visual: (p) => interiorSVG(p.interiorStyle || 'modern') }] : []),
   ...Object.entries(INTERIOR_STYLES).map(([value, s]) => ({
-    value, label: s.label, desc: s.desc, visual: () => interiorSVG(value),
+    value, label: s.label, desc: s.desc, photo: `int_${value}`, visual: () => interiorSVG(value),
   })),
 ];
 
@@ -48,7 +48,8 @@ export const TOPICS = [
     questions: [
       { id: 'exteriorStyle', type: 'cards', prompt: 'Which exterior style?', default: 'craftsman', options: exteriorCards },
       { id: 'exteriorPalette', type: 'cards', small: true, prompt: 'Color scheme?', default: 'style',
-        options: Object.entries(EXTERIOR_PALETTES).map(([value, p]) => ({ value, label: p.label, visual: () => paletteSVG(value) })) },
+        options: Object.entries(EXTERIOR_PALETTES).map(([value, p]) => ({ value, label: p.label, photo: (prof) => value === 'style' ? `ext_${prof.exteriorStyle}` : `pal_${value}`,
+          swatch: p.colors ? [p.colors.body, p.colors.trim, p.colors.roofColor] : null, visual: () => paletteSVG(value) })) },
       { id: 'siding', type: 'choice', prompt: 'Main exterior material?', default: 'siding',
         options: opts([['siding', 'Lap siding'], ['batten', 'Board & batten'], ['brick', 'Brick'], ['stone', 'Stone'], ['stucco', 'Stucco'], ['wood', 'Natural wood'], ['mixed', 'Mixed']]) },
       { id: 'roofMaterial', type: 'choice', prompt: 'Roof material?', default: 'asphalt',
@@ -93,7 +94,8 @@ export const TOPICS = [
       { id: 'kitchenLayout', type: 'choice', prompt: 'Layout?', default: 'island',
         options: opts([['island', 'Island'], ['peninsula', 'Peninsula'], ['lshape', 'L-shaped'], ['ushape', 'U-shaped'], ['galley', 'Galley']]) },
       { id: 'cabinets', type: 'cards', small: true, prompt: 'Cabinet color?', default: 'white',
-        options: Object.entries(CABINET_COLORS).map(([value, c]) => ({ value, label: c.label, visual: () => cabinetSVG(value) })) },
+        options: Object.entries(CABINET_COLORS).map(([value, c]) => ({ value, label: c.label, photo: `cab_${value}`,
+          swatch: [c.color, c.color2 || c.color], visual: () => cabinetSVG(value) })) },
       { id: 'countertops', type: 'choice', prompt: 'Countertops?', default: 'quartz',
         options: opts([['quartz', 'Quartz'], ['granite', 'Granite'], ['marble', 'Marble'], ['butcher', 'Butcher block'], ['concrete', 'Concrete']]) },
       { id: 'kitchenFeatures', type: 'multi', prompt: 'Kitchen must-haves?', default: ['pantry'],

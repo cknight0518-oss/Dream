@@ -2,6 +2,7 @@ import { TOPICS, defaultProfile, mustHaveOptions } from './questions.js';
 import { EXTERIOR_STYLES, EXTERIOR_PALETTES, INTERIOR_STYLES, CABINET_COLORS } from './styles-data.js';
 import { buildCriteria, describeCriteria, zillowUrl, connectorRequest } from './zillow.js';
 import { HouseViewer } from './house3d.js';
+import { PHOTOS } from './photos.js';
 
 const STORE = 'dreamhome.v1';
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -47,6 +48,26 @@ function markVisited(id) { if (!state.visited.includes(id)) state.visited.push(i
 
 function optionList(q) { return typeof q.options === 'function' ? q.options(state.profile) : q.options; }
 
+// Photo for a card option, if one is on file. Records it for the credits list.
+let creditsOnPage = new Map();
+function cardVisual(o, p) {
+  const key = typeof o.photo === 'function' ? o.photo(p) : o.photo;
+  const ph = key && PHOTOS[key];
+  if (!ph) return o.visual(p);
+  creditsOnPage.set(key, ph);
+  const sw = o.swatch ? `<div class="swatch">${o.swatch.map((c) => `<span style="background:${c}"></span>`).join('')}</div>` : '';
+  return `<img src="assets/cards/${key}.jpg" alt="" loading="lazy" title="${esc(credit(ph))}">${sw}`;
+}
+const credit = (ph) => `${ph.artist || 'Unknown'}, ${ph.license}`;
+
+function creditsBlock() {
+  if (!creditsOnPage.size) return '';
+  const items = [...creditsOnPage.values()].map((ph) =>
+    `<li><a href="${esc(ph.page)}" target="_blank" rel="noopener">${esc(ph.title.replace(/^File:/, ''))}</a> by ${esc(ph.artist || 'unknown')}, ` +
+    (ph.licenseUrl ? `<a href="${esc(ph.licenseUrl)}" target="_blank" rel="noopener">${esc(ph.license)}</a>` : esc(ph.license)) + '</li>').join('');
+  return `<details class="credits"><summary>Photo credits</summary><ul>${items}</ul></details>`;
+}
+
 function renderQuestion(q) {
   const p = state.profile;
   const v = p[q.id];
@@ -55,7 +76,7 @@ function renderQuestion(q) {
     case 'cards':
       return head + `<div class="cards ${q.small ? 'small' : ''}" role="radiogroup">` + optionList(q).map((o) => `
         <button class="card ${v === o.value ? 'selected' : ''}" role="radio" aria-checked="${v === o.value}" data-q="${q.id}" data-v="${o.value}">
-          <div class="visual">${o.visual(p)}</div>
+          <div class="visual">${cardVisual(o, p)}</div>
           <div class="card-text"><strong>${esc(o.label)}</strong>${o.desc ? `<span>${esc(o.desc)}</span>` : ''}</div>
         </button>`).join('') + '</div>';
     case 'choice':
@@ -90,16 +111,19 @@ function renderTopic() {
   }
   const qs = t.questions.filter((q) => !q.showIf || q.showIf(state.profile));
   const last = state.step === TOPICS.length - 1;
+  creditsOnPage = new Map();
+  const body = qs.map((q) => `<div class="question" id="q-${q.id}">${renderQuestion(q)}</div>`).join('');
   $('#main').innerHTML = `
     <section class="topic">
       <p class="eyebrow">Step ${state.step + 1} of ${TOPICS.length}</p>
       <h2>${esc(t.title)}</h2>
       ${t.intro ? `<p class="intro">${esc(t.intro)}</p>` : ''}
-      ${qs.map((q) => `<div class="question" id="q-${q.id}">${renderQuestion(q)}</div>`).join('')}
+      ${body}
       <div class="nav-buttons">
         ${state.step > 0 ? '<button class="secondary" id="back">Back</button>' : '<span></span>'}
         <button class="primary" id="next">${last ? 'Build my dream home' : 'Next'}</button>
       </div>
+      ${creditsBlock()}
     </section>`;
   $('#back')?.addEventListener('click', () => go(state.step - 1));
   $('#next').onclick = () => go(last ? 'results' : state.step + 1);
