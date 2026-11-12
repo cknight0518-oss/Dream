@@ -277,7 +277,7 @@ const VIEWS = {
     back:   (c, r) => [c.x - r * 0.85, r * 0.45, c.z - r * 1.3],
   },
   plan: {
-    dollhouse: (c, r) => [c.x + r * 0.15, r * 1.05, c.z + r * 0.95],
+    dollhouse: (c, r) => [c.x + r * 0.12, r * 0.88, c.z + r * 0.8],
     top:       (c, r) => [c.x, r * 1.75, c.z + 0.01],
   },
 };
@@ -398,6 +398,10 @@ export class HouseViewer {
     this.composer.setPixelRatio(this.renderer.getPixelRatio());
     this.composer.setSize(w, h);
     this.camera.aspect = w / h;
+    // Keep the horizontal field of view of a 38° camera at 1.5:1, so narrow
+    // viewers (the interview preview, phones) still fit the whole house.
+    const hTan = Math.tan(THREE.MathUtils.degToRad(19)) * 1.5;
+    this.camera.fov = Math.min(70, Math.max(38, THREE.MathUtils.radToDeg(2 * Math.atan(hTan / this.camera.aspect))));
     this.camera.updateProjectionMatrix();
   }
 
@@ -792,7 +796,7 @@ export class HouseViewer {
     }
 
     // trees
-    for (const [tx, tz, hgt] of [[-0.42, 0.36, 34], [0.43, -0.4, 40], [-0.4, -0.38, 30], [-0.1, -0.47, 36], [-0.46, 0.05, 28], [0.47, 0.05, 32]]) {
+    for (const [tx, tz, hgt] of [[-0.47, 0.2, 34], [0.43, -0.4, 40], [-0.4, -0.38, 30], [-0.1, -0.47, 36], [-0.46, 0.05, 28], [0.47, 0.05, 32]]) {
       const x = tx * this.lotSide, z = tz * this.lotSide;
       if (gx != null && Math.abs(x - gx) < gw / 2 + 8 && z > 0) continue; // keep the driveway clear
       const t = tree(hgt * (0.85 + rng() * 0.3), rng);
@@ -846,11 +850,7 @@ export class HouseViewer {
     const side = this.lotSide / 2 + 32;
     neighbor(-side - 10, -4, 0, 0); neighbor(-side - 100, -2, 0, 1);
     neighbor(side + 10 + (gw || 0) * 0.5, -4, 0, 2); neighbor(side + 100 + (gw || 0) * 0.5, -6, 0, 3);
-    for (let i = 0; i < 3; i++) neighbor((i - 1) * 95, z0 + 33 + 32, Math.PI, 4 + i);
-    // street trees on the far sidewalk
-    for (let x = -260; x <= 260; x += 52) {
-      const t = tree(26 + rng() * 8, rng); t.position.set(x + rng() * 8, 0, z0 + 36); yard(t);
-    }
+    for (let i = 0; i < 3; i++) neighbor((i - 1) * 95, z0 + 33 + 45, Math.PI, 4 + i);
   }
 
   // ---------- Interior "dollhouse" view ----------

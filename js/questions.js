@@ -23,7 +23,7 @@ export const TOPICS = [
     intro: 'Start with where and how much. These drive the Zillow search more than anything else.',
     questions: [
       { id: 'location', type: 'text', prompt: 'Where do you want to live?', placeholder: 'City, ST or ZIP (e.g. Denver, CO)', default: '' },
-      { id: 'budget', type: 'range', prompt: 'What price range?', prefix: '$', step: 25000, min: 50000, max: 10000000, default: [400000, 700000] },
+      { id: 'budget', type: 'range', scale: 'budget', prompt: 'What price range?', help: 'Drag both ends. This becomes the price filter on Zillow.', default: [400000, 700000] },
       { id: 'homeType', type: 'choice', prompt: 'What type of home?', default: 'singleFamily',
         options: opts([['singleFamily', 'Single-family house'], ['townhome', 'Townhome'], ['condo', 'Condo']]) },
       { id: 'view', type: 'choice', prompt: 'Any view you want?', default: 'none',
@@ -33,7 +33,7 @@ export const TOPICS = [
   {
     id: 'size', title: 'Size & layout',
     questions: [
-      { id: 'sqft', type: 'range', prompt: 'How much living space (square feet)?', step: 100, min: 400, max: 20000, default: [2200, 3200] },
+      { id: 'sqft', type: 'range', scale: 'sqft', prompt: 'How much living space?', help: 'Finished square feet. The 3D model uses the middle of your range.', default: [2200, 3200] },
       { id: 'stories', type: 'choice', prompt: 'How many stories?', default: '2',
         options: opts([['1', 'One'], ['2', 'Two'], ['3', 'Three']]) },
       { id: 'lot', type: 'choice', prompt: 'Lot size?', default: 'quarter',
@@ -170,4 +170,48 @@ export function defaultProfile() {
 export function roomStyle(p, field) {
   const v = p[field];
   return !v || v === 'inherit' ? p.interiorStyle : v;
+}
+
+// What each exterior style usually comes with. When the user picks a style, any
+// of these answers they haven't set themselves are switched to match.
+export const STYLE_SUGGEST = {
+  modern: { siding: 'stucco', roofMaterial: 'metal', porch: 'none' },
+  craftsman: { siding: 'siding', roofMaterial: 'asphalt', porch: 'front' },
+  farmhouse: { siding: 'batten', roofMaterial: 'metal', porch: 'wrap' },
+  colonial: { siding: 'siding', roofMaterial: 'asphalt', porch: 'none' },
+  ranch: { siding: 'brick', roofMaterial: 'asphalt', porch: 'none' },
+  mediterranean: { siding: 'stucco', roofMaterial: 'tile', porch: 'none' },
+  victorian: { siding: 'siding', roofMaterial: 'slate', porch: 'wrap' },
+  tudor: { siding: 'brick', roofMaterial: 'slate', porch: 'none' },
+  capecod: { siding: 'siding', roofMaterial: 'asphalt', porch: 'none' },
+  midcentury: { siding: 'wood', roofMaterial: 'asphalt', porch: 'none' },
+};
+
+// Slider stops: finer steps at the low end, coarser at the top.
+function stops(...bands) {
+  const out = [];
+  for (const [from, to, step] of bands) for (let v = from; v < to; v += step) out.push(v);
+  out.push(bands[bands.length - 1][1]);
+  return out;
+}
+export const SCALES = {
+  budget: stops([50000, 1000000, 25000], [1000000, 3000000, 100000], [3000000, 10000000, 250000]),
+  sqft: stops([400, 5000, 100], [5000, 12000, 250], [12000, 20000, 1000]),
+};
+
+// A filled-in example for the "See an example" button.
+export function sampleProfile() {
+  return {
+    ...defaultProfile(),
+    location: 'Asheville, NC', budget: [650000, 950000], sqft: [2600, 3400], stories: '2', lot: 'half',
+    exteriorStyle: 'craftsman', exteriorPalette: 'green', siding: 'siding', roofMaterial: 'asphalt', porch: 'wrap',
+    garage: '2', outdoorFeatures: ['deck', 'garden', 'fence'],
+    interiorStyle: 'farmhouse', floorPlan: 'open', ceilings: '10', flooring: 'hardwood',
+    livingFeatures: ['fireplace', 'builtins', 'light'],
+    kitchenStyle: 'inherit', kitchenLayout: 'island', cabinets: 'green', countertops: 'quartz', kitchenFeatures: ['pantry', 'islandSeating', 'gasRange'],
+    bedrooms: 4, primaryLocation: 'main', bedroomStyle: 'scandinavian', primaryFeatures: ['walkin', 'sitting'],
+    bathrooms: 3, bathroomStyle: 'inherit', primaryBath: ['tub', 'shower', 'doubleVanity'],
+    bonusRooms: ['office', 'mudroom', 'library'], basement: 'none', bonusStyle: 'inherit',
+    mustHaves: ['primaryMain'], flex: 'some',
+  };
 }
